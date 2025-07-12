@@ -181,6 +181,7 @@ async def on_message(message):
             value="Category: Image Steganography",
             inline=True
         )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
 
 # sort by category advanced
@@ -224,14 +225,21 @@ async def on_message(message):
             value="Category: Misc.",
             inline=True
         )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
 
-# sort by category webexploit
-        
-# sort by category steg
-# sort by category stringanalysis
-# sort by category encryption
-# sort by category misc
-# sort by category forensics
+# help
+    if message.content.startswith('$help'):
+       embed=discord.Embed(
+           title="HELP",
+           description="$ctfstart for initial instructions & description\n$challenges to view all challenges\n$beginner to view only beginner challenges\n$intermediate to view all intermediate challenges\n$advanced to view only advanced challenges\nLastly, type the challenge name (including the dollarsign) to view more instructions and submit flags.",
+           color=discord.Color.purple()
+       )
+       embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+       await message.channel.send(embed=embed)
+
+
+
+
 
 client.run(os.getenv('TOKEN'))
