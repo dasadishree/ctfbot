@@ -1,14 +1,19 @@
 import discord
+from discord.ext import commands
 import os
+import asyncio
 
 # chatgpt debugged this part to get the TOKEN & intent thing to work
 from dotenv import load_dotenv
 load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
-# 
+
 
 client = discord.Client(intents=intents)
+
+# flags (later on maybe i need a way to not store this in plaintext)
+infiltrate="!login Cyb3rP@ssw0rd!"
 
 # when bot is run
 @client.event
@@ -26,7 +31,7 @@ async def on_message(message):
     if message.content.startswith('$ctfstart'):
         embed = discord.Embed(
             title='Welcome to Capture The Flag (CTF)',
-            description='CTF is a cybersecurity competition that can help you practice security skills in a fun way. The goal is to "capture" the "flags" throughout the challenges we will give you. All the flags are formatted like "Flag=thisistheflag".\n\n Run $help for a list of commands. Have fun, and there may or may not be prizes...',
+            description='CTF is a cybersecurity competition that can help you practice security skills in a fun way. The goal is to "capture" the "flags" throughout the challenges we will give you. Each flag\'s format will be specified per challenge.\n\n Run $help for a list of commands. Have fun, and there may or may not be prizes...',
             color=discord.Colour.purple()
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
@@ -232,14 +237,35 @@ async def on_message(message):
     if message.content.startswith('$help'):
        embed=discord.Embed(
            title="HELP",
-           description="$ctfstart for initial instructions & description\n$challenges to view all challenges\n$beginner to view only beginner challenges\n$intermediate to view all intermediate challenges\n$advanced to view only advanced challenges\nLastly, type the challenge name (including the dollarsign) to view more instructions and submit flags.",
+           description="$ctfstart for initial instructions & description\n\n$challenges to view all challenges\n\n$beginner to view only beginner challenges\n\n$intermediate to view all intermediate challenges\n\n$advanced to view only advanced challenges\n\nLastly, type the challenge name (including the dollarsign) to view more instructions and submit flags.",
            color=discord.Color.purple()
        )
        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
        await message.channel.send(embed=embed)
 
+# $infiltrate
+    if message.content.startswith('$infiltrate'):
+        embed=discord.Embed(
+            title="$infilitrate",
+            description="You've'intercepted a suspicious-looking string. Figure out what it says and use the appropriate command to prove you have access. Only then will the system let you through. The flag is the command followed by the decoded string. When you figure it out, type \nThe string is: Q3liM3JQQHNzdzByZCE=",
+            color=discord.Color.purple()
+        )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
 
+        def check(m):
+            return m.author == message.author and m.channel == message.channel
+        response=await client.wait_for('message', check=check) 
+        if response.content.strip() == infiltrate:
+            await message.channel.send("Correct! You have completed this challenge.")
+        else:
+            await message.channel.send("Incorrect. Type the command again to try again.")
 
-
-
+# $hiddeninplainsight
+    if message.content.startswith('$hiddeninplainsight'):
+        embed=discord.Embed(
+            title="$hiddeninplainsight",
+            description="",
+            color=discord.Color.purple()
+        )
 client.run(os.getenv('TOKEN'))
