@@ -14,6 +14,9 @@ client = discord.Client(intents=intents)
 
 # flags (later on maybe i need a way to not store this in plaintext)
 infiltrate="!login Cyb3rP@ssw0rd!"
+hiddeninplainsight="flag{view_source_master}"
+behindtheframe = "flag{you_found_the_real_file}"
+
 
 # when bot is run
 @client.event
@@ -257,15 +260,60 @@ async def on_message(message):
             return m.author == message.author and m.channel == message.channel
         response=await client.wait_for('message', check=check) 
         if response.content.strip() == infiltrate:
-            await message.channel.send("Correct! You have completed this challenge.")
+            await message.channel.send("Access Granted! You have completed this challenge.")
         else:
-            await message.channel.send("Incorrect. Type the command again to try again.")
+            await message.channel.send("Invalid login. Type $infiltrate again to try again.")
 
 # $hiddeninplainsight
     if message.content.startswith('$hiddeninplainsight'):
         embed=discord.Embed(
             title="$hiddeninplainsight",
-            description="",
+            description="A suspicious site may be hiding something in plain sight. Not everything is meant to be seen with the naked eye. Type flag{...flaggoeshere...} to submit. \n The site is: https://hiddeninplainsight.netlify.app/",
             color=discord.Color.purple()
         )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
+
+        def check(m):
+            return m.author == message.author and m.channel == message.channel
+        response=await client.wait_for('message', check=check)
+        if response.content.strip() == hiddeninplainsight:
+            await message.channel.send("Access Granted! You have completed this challenge.")
+        else:
+            await message.channel.send("Incorrect. Type $hiddeninplainsight to try again.")
+
+# $behindtheframe
+    if message.content.startswith('$behindtheframe'):
+        embed=discord.Embed(
+            title="$behindtheframe",
+            description="Not everything is what it claims to be. A broken link might still lead to something valuable...if you know how to look! Type flag{...flaggoeshere...} to submit. \n Link: https://behindtheframe.netlify.app/"
+        )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
+
+        def check(m):
+            return m.author==message.author and m.channel ==message.channel
+        response=await client.wait_for('message',check=check)
+        if response.content.strip() == behindtheframe:
+            await message.channel.send("Congrats! You have completed this challenge.")
+        else:
+            await message.channel.send("Incorrect. Type $behindtheframe to try again.")
+
+# $pagehunt
+    if message.content.startswith('$pagehunt'):
+        embed=discord.Embed(
+            title="$pagehunt",
+            description="Looks like just an ordinary picture... or is it? Try peeling back a few digital layers."
+        )
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
+
+        def check(m):
+            return m.author==message.author and m.channel ==message.channel
+        response=await client.wait_for('message',check=check)
+        if response.content.strip() == behindtheframe:
+            await message.channel.send("Congrats! You have completed this challenge.")
+        else:
+            await message.channel.send("Incorrect. Type $behindtheframe to try again.")
+
 client.run(os.getenv('TOKEN'))
