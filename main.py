@@ -1,10 +1,13 @@
 import discord
 from discord.ext import commands
+import asyncio
+
+# points & leaderboard
+user_points = {}
+solved_challenges = {}
 
 intents = discord.Intents.default()
 intents.message_content = True
-
-
 client = discord.Client(intents=intents)
 
 # flags (later on maybe i need a way to not store this in plaintext)
@@ -19,9 +22,18 @@ yranib = "FLAG{REVERSE_ENGINEERED}"
 doubletrouble = "flag{double_encryption}"
 metadata = "flag{hidden_in_exif}"
 
-# add points
-def get_points(user_id):
-    return user_points.get(user_id, 0)
+#manage points and stuff
+def add_points(user_id, points_to_add, challenge_name):
+    current_points = user_points.get(user_id, 0)
+    user_points[user_id] = current_points + points_to_add
+
+    if user_id not in solved_challenges:
+        solved_challenges[user_id] = []
+    solved_challenges[user_id].append(challenge_name)
+
+# checks if challenge has been solved or not
+def is_solved(user_id, challenge_name):
+    return user_id in solved_challenges and challenge_name in solved_challenges[user_id]
 
 # when bot is run
 @client.event
@@ -180,14 +192,68 @@ async def on_message(message):
     if message.content.startswith('$help'):
        embed=discord.Embed(
            title="HELP",
-           description="$ctfstart for initial instructions & description\n\n$challenges to view all challenges\n\n$beginner to view only beginner challenges\n\n$intermediate to view all intermediate challenges\n\n$advanced to view only advanced challenges\n\nLastly, type the challenge name (including the dollarsign) to view more instructions and submit flags.",
+           description="$ctfstart for initial instructions & description\n\n$challenges to view all challenges\n\n$beginner to view only beginner challenges\n\n$intermediate to view all intermediate challenges\n\n$advanced to view only advanced challenges\n\nLastly, type the challenge name (including the dollarsign) to view more instructions and submit flags.\n\n$mypoints to see your stats\n$leaderboard to a leaderboard of players",
            color=discord.Color.purple()
        )
        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
        await message.channel.send(embed=embed)
+       
+# $mypoints
+    if message.content.startswith("$mypoints"):
+        user_id = message.author.id
+        current_points = user_points.get(user_id, 0)
+        solved_count = len(solved_challenges.get(user_id, []))
+        
+        embed=discord.Embed(
+            title=f"{message.author.display_name}'s Stats",
+            description=f"You currently have **{current_points}** points\nYou have solved **{solved_count}** challenges",
+            color=discord.Color.purple()
+        )
+        
+        if solved_count > 0:
+            solved_list = ", ".join(solved_challenges[user_id])
+            embed.add_field(name="Solved Challenges", value=solved_list, inline=False)
+        
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
+
+# $leaderboard
+    if message.content.startswith("$leaderboard"):
+        if not user_points:
+            await message.channel.send("No one has solved any challenges yet!")
+            return
+        
+        sorted_users = sorted(user_points.items(), key=lambda x: x[1], reverse=True)
+        
+        embed = discord.Embed(
+            title="Leaderboard",
+            description="Top players by points",
+            color=discord.Color.purple()
+        )
+        
+        for i, (user_id, points) in enumerate(sorted_users[:10], 1): 
+            try:
+                user = await client.fetch_user(user_id)
+                username = user.display_name
+            except:
+                username = f"User {user_id}"
+            
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"#{i}"
+            embed.add_field(
+                name=f"{medal} {username}",
+                value=f"{points} points",
+                inline=False
+            )
+        
+        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+        await message.channel.send(embed=embed)
 
 # $infiltrate
     if message.content.startswith('$infiltrate'):
+        if is_solved(message.author.id, "$infiltrate"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$infiltrate",
             description="You've'intercepted a suspicious-looking string. Figure out what it says and use the appropriate command to prove you have access. Only then will the system let you through. The flag is the command followed by the decoded string. When you figure it out, type it as a chat. \nThe string is: Q3liM3JQQHNzdzByZCE=",
@@ -198,15 +264,20 @@ async def on_message(message):
 
         def check(m):
             return m.author == message.author and m.channel == message.channel
+            
         response=await client.wait_for('message', check=check) 
         if response.content.strip() == infiltrate:
-            get_points(message.author.id, points=1)
+            add_points(message.author.id, 1, "$infiltrate")
             await message.channel.send("Access Granted! You have completed this challenge.")
         else:
             await message.channel.send("Invalid login. Type $infiltrate again to try again.")
 
 # $hiddeninplainsight
     if message.content.startswith('$hiddeninplainsight'):
+        if is_solved(message.author.id, "$hiddeninplainsight"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$hiddeninplainsight",
             description="A suspicious site may be hiding something in plain sight. Not everything is meant to be seen with the naked eye. Type flag{...flaggoeshere...} to submit. When you figure it out, type it as a chat. \n The site is: https://hiddeninplainsight.netlify.app/",
@@ -217,14 +288,20 @@ async def on_message(message):
 
         def check(m):
             return m.author == message.author and m.channel == message.channel
+        
         response=await client.wait_for('message', check=check)
         if response.content.strip() == hiddeninplainsight:
+            add_points(message.author.id, 1, "$hiddeninplainsight")
             await message.channel.send("Access Granted! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $hiddeninplainsight to try again.")
 
 # $behindtheframe
     if message.content.startswith('$behindtheframe'):
+        if is_solved(message.author.id, "$behindtheframe"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$behindtheframe",
             description="Not everything is what it claims to be. A broken link might still lead to something valuable...if you know how to look! Type flag{...flaggoeshere...} to submit. When you figure it out, type it as a chat. \n Link: https://behindtheframe.netlify.app/"
@@ -234,14 +311,20 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel ==message.channel
+        
         response=await client.wait_for('message',check=check)
         if response.content.strip() == behindtheframe:
+            add_points(message.author.id, 1, "$behindtheframe")
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $behindtheframe to try again.")
 
 # $pagehunt
     if message.content.startswith('$pagehunt'):
+        if is_solved(message.author.id, "$pagehunt"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+
         embed=discord.Embed(
             title="$pagehunt",
             description="The flag isn't always in plain sight, but the browser knows more than it shows. Try digging a little deeper. Flag will be in format flag{...flaggoeshere} When you figure it out, type it as a chat. \n Link: https://pagehunt.netlify.app/ "
@@ -251,16 +334,22 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel ==message.channel
+        
         response=await client.wait_for('message',check=check)
         if response.content.strip() == pagehunt:
+            add_points(message.author.id, 2, "$pagehunt")
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $pagehunt to try again.")
     
 # $hiddenlayers
     if message.content.startswith('$hiddenlayers'):
+        if is_solved(message.author.id, "$hiddenlayers"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
-            title='$pagehunt',
+            title='$hiddenlayers',
             description="Looks like just an ordinary picture... or is it? Try peeling back a few digital layers. Flag will be in format flag{...flaggoeshere...} When you figure it out, type it as a chat. \n Link to image: https://drive.google.com/file/d/1BnbaDnG5DICcrVUVLwIBZB9p1njInjx4/view?usp=sharing"
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
@@ -268,14 +357,20 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel == message.channel
+        
         response=await client.wait_for('message', check=check)
         if response.content.strip() == hiddenlayers:
+            add_points(message.author.id, 2, "$hiddenlayers")
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $hiddenlayers to try again.")
 
 # $codecascade
     if message.content.startswith('$codecascade'):
+        if is_solved(message.author.id, "$codecascade"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$codecascade",
             description="Sometimes the signal is buried in noise. We intercepted a corrupted message, but it still contains a secret code. The flag will be 15 digits in a row, undisturbed. Can you pull it out? \n Link to message: https://tinyurl.com/codecascade"
@@ -285,13 +380,19 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel==message.channel
+        
         response=await client.wait_for("message", check=check)
         if response.content.strip() == codecascade:
+            add_points(message.author.id, 2, "$codecascade")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $codecascade to try again.")
 
 # $birdsnest
     if message.content.startswith('$birdsnest'):
+        if is_solved(message.author.id, "$birdsnest"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+
         embed=discord.Embed(
             title="$birdsnest",
             description="You've intercepted a suspicious archive containing hundreds of files and dozens of folders, one of these files has the flag in flag{...} format. \n Link to download zip: https://drive.google.com/file/d/14JaIUjbzTehlbzXXlCv_u_6RbnB-x3Lw/view?usp=sharing"
@@ -301,13 +402,19 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel==message.channel
+        
         response=await client.wait_for("message", check=check)
         if response.content.strip() == birdsnest:
+            add_points(message.author.id, 3, "$birdsnest")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $birdsnest to try again.")
 
 # $yranib
     if message.content.startswith("$yranib"):
+        if is_solved(message.author.id, "$yranib"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$yranib",
             description="You are given a binary. Reverse engineer it to find the secret code to get the flag. Flag format will be: FLAG{...}\n Link to zip file: https://drive.google.com/file/d/1_qcJBQVAU98FNTg99Jy1zikiODtIXocO/view?usp=sharing"
@@ -317,13 +424,19 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel==message.channel
+        
         response=await client.wait_for("message", check=check)
         if response.content.strip() == yranib:
+            add_points(message.author.id, 3, "$yranib")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $yranib to try again")
 
 # $doubletrouble
     if message.content.startswith("$doubletrouble"):
+        if is_solved(message.author.id, "$doubletrouble"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$doubletrouble",
             description="The secret flag is hidden behind layer(s) of encryption. Can you reverse the encryption to get the flag?\nThe flag is: c3ludHtxaG95eXJfcmFwZWxjZ3JhZ30="
@@ -333,13 +446,19 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel==message.channel
+        
         response=await client.wait_for("message", check=check)
         if response.content.strip() == doubletrouble:
+            add_points(message.author.id, 2, "$doubletrouble")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $doubletrouble to try again")
 
 # $metadata
     if message.content.startswith("$metadata"):
+        if is_solved(message.author.id, "$metadata"):
+            await message.channel.send("You have already solved this challenge!")
+            return
+        
         embed=discord.Embed(
             title="$metadata",
             description="The flag is hidden somewhere in this image...\n Download directly from Google Drive: https://drive.google.com/file/d/1hUbX6GtjPadQhABoNXeO2OD6GdWNXP_B/view?usp=sharing"
@@ -349,8 +468,10 @@ async def on_message(message):
 
         def check(m):
             return m.author==message.author and m.channel==message.channel
+        
         response=await client.wait_for("message", check=check)
         if response.content.strip() == metadata:
+            add_points(message.author.id, 3, "$metadata")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $metadata to try again")
-client.run('MTM5MDQ3NzM4Mjg1ODcwNjk5NA.GzwHpB.oi1MKeGhXa4UZHwGKK6qTXevNruYs3xueafO0E')
+client.run('MTM5MDQ3NzM4Mjg1ODcwNjk5NA.G8x4yX.iocAxv_If3C-bWu2_-03XKJiqhO3BHcHgDrU0c')
