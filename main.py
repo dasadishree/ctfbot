@@ -1,10 +1,70 @@
 import discord
 from discord.ext import commands
+import firebase_admin
+from firebase_admin import credentials, firestore
 import asyncio
+
+# Initialize Firebase
+try:
+    cred = credentials.Certificate('firebase-service-account.json')
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    print("Firebase initialized successfully!")
+except Exception as e:
+    print(f"Warning: Firebase initialization failed: {e}")
+    print("Bot will run with local storage only (data will not persist)")
+    db = None
 
 # points & leaderboard
 user_points = {}
 solved_challenges = {}
+
+# Load data from Firebase when bot starts
+async def load_data_from_firebase():
+    global user_points, solved_challenges
+    if db is None:
+        print("Firebase not available, starting with empty data")
+        user_points = {}
+        solved_challenges = {}
+        return
+        
+    try:
+        # Load user points
+        points_doc = db.collection('leaderboard').document('user_points').get()
+        if points_doc.exists:
+            user_points = points_doc.to_dict()
+        else:
+            user_points = {}
+        
+        # Load solved challenges
+        challenges_doc = db.collection('leaderboard').document('solved_challenges').get()
+        if challenges_doc.exists:
+            solved_challenges = challenges_doc.to_dict()
+        else:
+            solved_challenges = {}
+        
+        print(f"Loaded {len(user_points)} users and {len(solved_challenges)} challenge records from Firebase")
+    except Exception as e:
+        print(f"Error loading data from Firebase: {e}")
+        user_points = {}
+        solved_challenges = {}
+
+# Save data to Firebase
+async def save_data_to_firebase():
+    if db is None:
+        print("Firebase not available, data not saved")
+        return
+        
+    try:
+        # Save user points
+        db.collection('leaderboard').document('user_points').set(user_points)
+        
+        # Save solved challenges
+        db.collection('leaderboard').document('solved_challenges').set(solved_challenges)
+        
+        print("Data saved to Firebase successfully")
+    except Exception as e:
+        print(f"Error saving data to Firebase: {e}")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -24,21 +84,27 @@ metadata = "flag{hidden_in_exif}"
 
 #manage points and stuff
 def add_points(user_id, points_to_add, challenge_name):
-    current_points = user_points.get(user_id, 0)
-    user_points[user_id] = current_points + points_to_add
+    user_id_str = str(user_id)
+    current_points = user_points.get(user_id_str, 0)
+    user_points[user_id_str] = current_points + points_to_add
 
-    if user_id not in solved_challenges:
-        solved_challenges[user_id] = []
-    solved_challenges[user_id].append(challenge_name)
+    if user_id_str not in solved_challenges:
+        solved_challenges[user_id_str] = []
+    solved_challenges[user_id_str].append(challenge_name)
+    
+    # Save to Firebase after updating
+    asyncio.create_task(save_data_to_firebase())
 
 # checks if challenge has been solved or not
 def is_solved(user_id, challenge_name):
-    return user_id in solved_challenges and challenge_name in solved_challenges[user_id]
+    return str(user_id) in solved_challenges and challenge_name in solved_challenges[str(user_id)]
 
 # when bot is run
 @client.event
 async def on_ready():
     print("We have logged in as {0.user}".format(client))
+    await load_data_from_firebase()
+    print("Bot is ready!")
 
 # when bot sees message
 @client.event
@@ -201,8 +267,8 @@ async def on_message(message):
 # $mypoints
     if message.content.startswith("$mypoints"):
         user_id = message.author.id
-        current_points = user_points.get(user_id, 0)
-        solved_count = len(solved_challenges.get(user_id, []))
+        current_points = user_points.get(str(user_id), 0)
+        solved_count = len(solved_challenges.get(str(user_id), []))
         
         embed=discord.Embed(
             title=f"{message.author.display_name}'s Stats",
@@ -211,7 +277,7 @@ async def on_message(message):
         )
         
         if solved_count > 0:
-            solved_list = ", ".join(solved_challenges[user_id])
+            solved_list = ", ".join(solved_challenges[str(user_id)])
             embed.add_field(name="Solved Challenges", value=solved_list, inline=False)
         
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
@@ -233,7 +299,8 @@ async def on_message(message):
         
         for i, (user_id, points) in enumerate(sorted_users[:10], 1): 
             try:
-                user = await client.fetch_user(user_id)
+                # Convert string user_id back to int for Discord API
+                user = await client.fetch_user(int(user_id))
                 username = user.display_name
             except:
                 username = f"User {user_id}"
