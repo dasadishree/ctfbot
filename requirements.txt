@@ -1,2 +1,3 @@
 discord.py==2.3.2
+firebase-admin
 # python-dotenv (idt i need this)
