@@ -541,4 +541,4 @@ async def on_message(message):
             add_points(message.author.id, 3, "$metadata")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $metadata to try again")
-client.run('MTM5MDQ3NzM4Mjg1ODcwNjk5NA.G8x4yX.iocAxv_If3C-bWu2_-03XKJiqhO3BHcHgDrU0c')
+client.run(DISCORD_TOKEN)
