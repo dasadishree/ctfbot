@@ -178,7 +178,7 @@ stack-data==0.6.3
 tensorboard==2.11.2
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
-tensorflow @ file:///Users/dasadishree/Downloads/tensorflow-2.4.1-py3-none-any.whl#sha256=b77ed49c17de8d680a33a5318b0ad480033235fbedb62487275f39dcac91406f
+tensorflow==2.4.1
 tensorflow-estimator==2.4.0
 tensorflow-io-gcs-filesystem==0.34.0
 termcolor==1.1.0
