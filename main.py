@@ -19,7 +19,61 @@ except Exception as e:
 user_points = {}
 solved_challenges = {}
 
-# Load data from Firebase when bot starts
+user_channels = {}
+
+# create priv channel
+async def get_user_channel(user):
+    """Get or create a private channel for a user"""
+    user_id = str(user.id)
+    
+    if user_id in user_channels:
+        try:
+            channel = client.get_channel(user_channels[user_id])
+            if channel:
+                return channel
+        except:
+            del user_channels[user_id]
+    
+    try:
+        guild = user.guild
+        if not guild:
+            return None
+            
+        target_category = None
+        for category in guild.categories:
+            if "capture the flag" in category.name.lower():
+                target_category = category
+                break
+        
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True)
+        }
+        
+        if target_category:
+            channel = await guild.create_text_channel(
+                f"ctf-{user.display_name}",
+                category=target_category,
+                overwrites=overwrites,
+                topic=f"Private CTF channel for {user.display_name}"
+            )
+        else:
+            channel = await guild.create_text_channel(
+                f"ctf-{user.display_name}",
+                overwrites=overwrites,
+                topic=f"Private CTF channel for {user.display_name}"
+            )
+        
+        user_channels[user_id] = channel.id
+        
+        return channel
+        
+    except Exception as e:
+        print(f"Error creating channel for user {user_id}: {e}")
+        return None
+
+# load firebase data
 async def load_data_from_firebase():
     global user_points, solved_challenges
     if db is None:
@@ -29,14 +83,12 @@ async def load_data_from_firebase():
         return
         
     try:
-        # Load user points
         points_doc = db.collection('leaderboard').document('user_points').get()
         if points_doc.exists:
             user_points = points_doc.to_dict()
         else:
             user_points = {}
         
-        # Load solved challenges
         challenges_doc = db.collection('leaderboard').document('solved_challenges').get()
         if challenges_doc.exists:
             solved_challenges = challenges_doc.to_dict()
@@ -49,17 +101,15 @@ async def load_data_from_firebase():
         user_points = {}
         solved_challenges = {}
 
-# Save data to Firebase
+# save firebase datas
 async def save_data_to_firebase():
     if db is None:
         print("Firebase not available, data not saved")
         return
         
     try:
-        # Save user points
         db.collection('leaderboard').document('user_points').set(user_points)
         
-        # Save solved challenges
         db.collection('leaderboard').document('solved_challenges').set(solved_challenges)
         
         print("Data saved to Firebase successfully")
@@ -92,7 +142,7 @@ def add_points(user_id, points_to_add, challenge_name):
         solved_challenges[user_id_str] = []
     solved_challenges[user_id_str].append(challenge_name)
     
-    # Save to Firebase after updating
+    # save to firebase after updating
     asyncio.create_task(save_data_to_firebase())
 
 # checks if challenge has been solved or not
@@ -110,24 +160,92 @@ async def on_ready():
 @client.event
 async def on_message(message):
     # only tracks others' messages
-    if message.author==client.user:
+    if message.author == client.user:
         return
+    
+    # check & redirect
+    ctf_commands = ['$challenges', '$beginner', '$intermediate', '$advanced', 
+                    '$mypoints', '$infiltrate', '$hiddeninplainsight', '$behindtheframe', 
+                    '$pagehunt', '$hiddenlayers', '$codecascade', '$birdsnest', '$yranib', 
+                    '$doubletrouble', '$metadata']
+    
+    if any(message.content.startswith(cmd) for cmd in ctf_commands):
+        user_id = str(message.author.id)
+        if user_id in user_channels and message.channel.id == user_channels[user_id]:
+            pass
+        else:
+            embed = discord.Embed(
+                title="🔐 Private Channel Required",
+                description="CTF commands only work in your private channel. Use `$ctfstart` in #ctf-start to create one!",
+                color=discord.Color.blue()
+            )
+            embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            await message.channel.send(embed=embed)
+            return
     
     # responds to commands
     if message.content.startswith('$ctfstart'):
+        # only allow $ctfstart in the ctf-start channel
+        if message.channel.name != "ctf-start":
+            embed = discord.Embed(
+                title="❌ Wrong Channel",
+                description="Use `$ctfstart` in the #ctf-start channel only!",
+                color=discord.Color.red()
+            )
+            embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            await message.channel.send(embed=embed)
+            return
+            
+        # create private channel
+        private_channel = await get_user_channel(message.author)
+        
+        if private_channel:
+            embed = discord.Embed(
+                title='🎯 Welcome to Capture The Flag (CTF)',
+                description='CTF is a cybersecurity competition that can help you practice security skills in a fun way. The goal is to "capture" the "flags" throughout the challenges we will give you. Each flag\'s format will be specified per challenge.\n\n **This is your private CTF channel!** All your challenge attempts and progress will be private here.\n\n Run $help for a list of commands. Have fun, and there may or may not be prizes...',
+                color=discord.Colour.purple()
+            )
+            embed.add_field(
+                name="🚀 Get Started",
+                value="Try these commands:\n• `$challenges` - View all challenges\n• `$leaderboard` - see top scorers\n• `$help` - See all commands\n• `$mypoints` - See your points",
+                inline=False
+            )
+            embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            
+            await private_channel.send(embed=embed)
+            
+            embed_public = discord.Embed(
+                title="🎯 CTF Started!",
+                description=f"Welcome to CTF, {message.author.display_name}! I've created your private channel: {private_channel.mention}\n\n**All your CTF interactions will happen there!**",
+                color=discord.Colour.green()
+            )
+            embed_public.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            await message.channel.send(embed=embed_public)
+        else:
+            embed = discord.Embed(
+                title="❌ Error",
+                description="Could not create your private channel. Make sure I have permission to create channels in this server.",
+                color=discord.Color.red()
+            )
+            embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            await message.channel.send(embed=embed)
+        return
+    
+    # Redirect any other CTF commands used in #ctf-start channel
+    if message.channel.name == "ctf-start" and message.content.startswith('$'):
         embed = discord.Embed(
-            title='Welcome to Capture The Flag (CTF)',
-            description='CTF is a cybersecurity competition that can help you practice security skills in a fun way. The goal is to "capture" the "flags" throughout the challenges we will give you. Each flag\'s format will be specified per challenge.\n\n Run $help for a list of commands. Have fun, and there may or may not be prizes...',
-            color=discord.Colour.purple()
+            title="❌ Wrong Channel",
+            description="This channel is only for `$ctfstart` to create your private channel.\n\n**Use your private CTF channel for all other commands like $help, $challenges, etc. \n Ping @adishreeed for questions/help.",
+            color=discord.Color.blue()
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
-        
         await message.channel.send(embed=embed)
+        return
 
     #view all possible challenges
     if message.content.startswith('$challenges'):
         embed=discord.Embed(
-            title="CHALLENGES",
+            title="🎯 CHALLENGES",
             description="Type $beginner $intermediate or $advanced to sort by difficulty.\nType $webexploit $encrypt $stringanalysis $steg $forensics or $misc to sort by category.\nType each challenge name to view more info and enter the flag.",
             color=discord.Colour.purple()
         )
@@ -182,6 +300,7 @@ async def on_message(message):
             inline=True
         )
         await message.channel.send(embed=embed)
+        return
 
 # sort by category beginner
     if message.content.startswith('$beginner'):
@@ -205,6 +324,7 @@ async def on_message(message):
             inline=True
         )
         await message.channel.send(embed=embed)
+        return
 
 # sort by category intermediate
     if message.content.startswith('$intermediate'):
@@ -229,6 +349,7 @@ async def on_message(message):
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
+        return
 
 # sort by category advanced
     if message.content.startswith('$advanced'):
@@ -253,6 +374,7 @@ async def on_message(message):
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
+        return
 
 # help
     if message.content.startswith('$help'):
@@ -263,6 +385,7 @@ async def on_message(message):
        )
        embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
        await message.channel.send(embed=embed)
+       return
        
 # $mypoints
     if message.content.startswith("$mypoints"):
@@ -277,11 +400,12 @@ async def on_message(message):
         )
         
         if solved_count > 0:
-            solved_list = ", ".join(solved_challenges[str(user_id)])
+            solved_list = ", ".join(solved_challenges[user_id])
             embed.add_field(name="Solved Challenges", value=solved_list, inline=False)
         
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
+        return
 
 # $leaderboard
     if message.content.startswith("$leaderboard"):
@@ -299,7 +423,6 @@ async def on_message(message):
         
         for i, (user_id, points) in enumerate(sorted_users[:10], 1): 
             try:
-                # Convert string user_id back to int for Discord API
                 user = await client.fetch_user(int(user_id))
                 username = user.display_name
             except:
@@ -314,11 +437,18 @@ async def on_message(message):
         
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
         await message.channel.send(embed=embed)
+        return
 
 # $infiltrate
     if message.content.startswith('$infiltrate'):
         if is_solved(message.author.id, "$infiltrate"):
-            await message.channel.send("You have already solved this challenge!")
+            embed = discord.Embed(
+                title="Already Solved!",
+                description="You have already solved this challenge!",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
+            await message.channel.send(embed=embed)
             return
         
         embed=discord.Embed(
@@ -338,6 +468,7 @@ async def on_message(message):
             await message.channel.send("Access Granted! You have completed this challenge.")
         else:
             await message.channel.send("Invalid login. Type $infiltrate again to try again.")
+        return
 
 # $hiddeninplainsight
     if message.content.startswith('$hiddeninplainsight'):
@@ -362,6 +493,7 @@ async def on_message(message):
             await message.channel.send("Access Granted! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $hiddeninplainsight to try again.")
+        return
 
 # $behindtheframe
     if message.content.startswith('$behindtheframe'):
@@ -385,6 +517,7 @@ async def on_message(message):
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $behindtheframe to try again.")
+        return
 
 # $pagehunt
     if message.content.startswith('$pagehunt'):
@@ -408,6 +541,7 @@ async def on_message(message):
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $pagehunt to try again.")
+        return
     
 # $hiddenlayers
     if message.content.startswith('$hiddenlayers'):
@@ -431,6 +565,7 @@ async def on_message(message):
             await message.channel.send("Congrats! You have completed this challenge.")
         else:
             await message.channel.send("Incorrect. Type $hiddenlayers to try again.")
+        return
 
 # $codecascade
     if message.content.startswith('$codecascade'):
@@ -453,6 +588,7 @@ async def on_message(message):
             add_points(message.author.id, 2, "$codecascade")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $codecascade to try again.")
+        return
 
 # $birdsnest
     if message.content.startswith('$birdsnest'):
@@ -475,6 +611,7 @@ async def on_message(message):
             add_points(message.author.id, 3, "$birdsnest")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $birdsnest to try again.")
+        return
 
 # $yranib
     if message.content.startswith("$yranib"):
@@ -497,6 +634,7 @@ async def on_message(message):
             add_points(message.author.id, 3, "$yranib")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $yranib to try again")
+        return
 
 # $doubletrouble
     if message.content.startswith("$doubletrouble"):
@@ -519,6 +657,7 @@ async def on_message(message):
             add_points(message.author.id, 2, "$doubletrouble")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $doubletrouble to try again")
+        return
 
 # $metadata
     if message.content.startswith("$metadata"):
@@ -541,4 +680,5 @@ async def on_message(message):
             add_points(message.author.id, 3, "$metadata")
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $metadata to try again")
+        return
 client.run("MTM5MDQ3NzM4Mjg1ODcwNjk5NA.G8x4yX.iocAxv_If3C-bWu2_-03XKJiqhO3BHcHgDrU0c")
