@@ -3,6 +3,8 @@ from discord.ext import commands
 import firebase_admin
 from firebase_admin import credentials, firestore
 import asyncio
+import os
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Initialize Firebase
 try:
