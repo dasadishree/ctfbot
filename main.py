@@ -4,7 +4,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import asyncio
 
-# Initialize Firebase
+# firebase
 try:
     cred = credentials.Certificate('firebase-service-account.json')
     firebase_admin.initialize_app(cred)
@@ -207,7 +207,7 @@ async def on_message(message):
             )
             embed.add_field(
                 name="🚀 Get Started",
-                value="Try these commands:\n• `$challenges` - View all challenges\n• `$leaderboard` - see top scorers\n• `$help` - See all commands\n• `$mypoints` - See your points",
+                value="Try these commands:\n• `$challenges` - View all challenges\n• `$beginner` - Start with easy ones\n• `$help` - See all commands",
                 inline=False
             )
             embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
@@ -231,11 +231,11 @@ async def on_message(message):
             await message.channel.send(embed=embed)
         return
     
-    # Redirect any other CTF commands used in #ctf-start channel
+    # redirect 
     if message.channel.name == "ctf-start" and message.content.startswith('$'):
         embed = discord.Embed(
-            title="❌ Wrong Channel",
-            description="This channel is only for `$ctfstart` to create your private channel.\n\n**Use your private CTF channel for all other commands like $help, $challenges, etc. \n Ping @adishreeed for questions/help.",
+            title="🔐 Wrong Channel for CTF Commands",
+            description="This channel is only for `$ctfstart` to create your private channel.\n\n**Use your private CTF channel for all other commands like:**\n• `$challenges` - View challenges\n• `$help` - Get help\n• `$mypoints` - Check your stats\n• Challenge commands like `$infiltrate`",
             color=discord.Color.blue()
         )
         embed.set_footer(text="💙🩷 Techfluences x Cyber Valkyries")
@@ -389,9 +389,9 @@ async def on_message(message):
        
 # $mypoints
     if message.content.startswith("$mypoints"):
-        user_id = message.author.id
-        current_points = user_points.get(str(user_id), 0)
-        solved_count = len(solved_challenges.get(str(user_id), []))
+        user_id = str(message.author.id)
+        current_points = user_points.get(user_id, 0)
+        solved_count = len(solved_challenges.get(user_id, []))
         
         embed=discord.Embed(
             title=f"{message.author.display_name}'s Stats",
