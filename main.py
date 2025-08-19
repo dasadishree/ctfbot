@@ -4,8 +4,37 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import asyncio
 import os
+import sys
+
+# get environment variables
 discord_token = os.environ.get('DISCORD_TOKEN')
 firebase_config_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
+
+# AI Debug: Print all environment variables to see what's available
+print("🔍 Debug: Environment variables available:")
+for key, value in os.environ.items():
+    if 'DISCORD' in key or 'FIREBASE' in key or 'TOKEN' in key:
+        if 'TOKEN' in key and value:
+            print(f"  {key}: {value[:10]}...{value[-10:] if len(value) > 20 else ''}")
+        else:
+            print(f"  {key}: {value}")
+    elif 'RAILWAY' in key or 'PORT' in key:
+        print(f"  {key}: {value}")
+
+print(f"🔍 Debug: DISCORD_TOKEN value: {discord_token}")
+print(f"🔍 Debug: DISCORD_TOKEN type: {type(discord_token)}")
+print(f"🔍 Debug: DISCORD_TOKEN length: {len(discord_token) if discord_token else 'None'}")
+
+# Check if required environment variables are set
+if not discord_token:
+    print("❌ ERROR: DISCORD_TOKEN environment variable is not set!")
+    print("Please check your Railway environment variables.")
+    print("Make sure the variable name is exactly 'DISCORD_TOKEN' (case sensitive)")
+    print("Current environment variables:")
+    for key in os.environ.keys():
+        if 'DISCORD' in key or 'TOKEN' in key:
+            print(f"  Found: {key}")
+    sys.exit(1)
 
 # firebase
 try:
