@@ -10,7 +10,7 @@ import sys
 discord_token = os.environ.get('DISCORD_TOKEN')
 firebase_config_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
 
-# AI Debug: Print all environment variables to see what's available
+# ai debug: Print all environment variables to see what's available
 print("🔍 Debug: Environment variables available:")
 for key, value in os.environ.items():
     if 'DISCORD' in key or 'FIREBASE' in key or 'TOKEN' in key:
@@ -25,7 +25,7 @@ print(f"🔍 Debug: DISCORD_TOKEN value: {discord_token}")
 print(f"🔍 Debug: DISCORD_TOKEN type: {type(discord_token)}")
 print(f"🔍 Debug: DISCORD_TOKEN length: {len(discord_token) if discord_token else 'None'}")
 
-# Check if required environment variables are set
+# checks if required environment variables are set
 if not discord_token:
     print("❌ ERROR: DISCORD_TOKEN environment variable is not set!")
     print("Please check your Railway environment variables.")
@@ -201,7 +201,7 @@ async def on_message(message):
     ctf_commands = ['$challenges', '$beginner', '$intermediate', '$advanced', 
                     '$mypoints', '$infiltrate', '$hiddeninplainsight', '$behindtheframe', 
                     '$pagehunt', '$hiddenlayers', '$codecascade', '$birdsnest', '$yranib', 
-                    '$doubletrouble', '$metadata']
+                    '$doubletrouble', '$metadata', "$easyentry", "$chatleak", "$sharkit", "$domaindive", "$catnet"]
     
     if any(message.content.startswith(cmd) for cmd in ctf_commands):
         user_id = str(message.author.id)
@@ -331,6 +331,31 @@ async def on_message(message):
         embed.add_field(
             name="$yranib",
             value="Category: Misc.\nLevel: Advanced",
+            inline=True
+        )
+        embed.add_field(
+            name="$catnet",
+            value="COMING SOON",
+            inline=True
+        )
+        embed.add_field(
+            name="$sharkit",
+            value="COMING SOON",
+            inline=True
+        )
+        embed.add_field(
+            name="$domaindive",
+            value="COMING SOON",
+            inline=True
+        )
+        embed.add_field(
+            name="$chatleak",
+            value="COMING SOON",
+            inline=True
+        )
+        embed.add_field(
+            name="$easyentry",
+            value="COMING SOON",
             inline=True
         )
         await message.channel.send(embed=embed)
