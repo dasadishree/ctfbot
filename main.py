@@ -3,10 +3,15 @@ from discord.ext import commands
 import firebase_admin
 from firebase_admin import credentials, firestore
 import asyncio
+import os
+discord_token = os.environ.get('DISCORD_TOKEN')
+firebase_config_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
 
 # firebase
 try:
-    cred = credentials.Certificate('firebase-service-account.json')
+    cred = credentials.Certificate(
+        eval(firebase_config_json)    
+    )
     firebase_admin.initialize_app(cred)
     db = firestore.client()
     print("Firebase initialized successfully!")
@@ -681,4 +686,4 @@ async def on_message(message):
             await message.channel.send("Congrats! You've completed this challenge.")
         else: await message.channel.send("Incorrect. Type $metadata to try again")
         return
-client.run("MTM5MDQ3NzM4Mjg1ODcwNjk5NA.GW1CvR.fnjEQOrQDPSsYzrhClKZpzRLzrEXuzdtJtOd10")
+client.run(discord_token)
