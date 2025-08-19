@@ -6,3 +6,10 @@ demo url (add the bot to your own server): https://discord.com/oauth2/authorize?
 
 start of by saying $ctfstart in any channel named #ctf-start
 [![Athena Award Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Faward.athena.hackclub.com%2Fapi%2Fbadge)](https://award.athena.hackclub.com?utm_source=readme)
+
+
+## instructions for use:
+- Add Discord bot to your server
+- add a new category on the left sidebar called "Capture The Flag"
+- then add a channel called #ctfstart in this category and make sure the bot has access! 
+- in the #ctfstart channel, run the bot command $ctfstart and the bot should work to create a priv channel for u and from there go on!
