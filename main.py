@@ -276,60 +276,63 @@ async def on_message(message):
         await message.channel.send(embed=embed)
         return
 
-    #view all possible challenges
+#view all possible challenges
     if message.content.startswith('$challenges'):
+        user_id = str(message.author.id)
+        user_solved = solved_challenges.get(user_id, [])
+        
         embed=discord.Embed(
             title="🎯 CHALLENGES",
             description="Type $beginner $intermediate or $advanced to sort by difficulty.\nType $webexploit $encrypt $stringanalysis $steg $forensics or $misc to sort by category.\nType each challenge name to view more info and enter the flag.",
             color=discord.Colour.purple()
         )
         embed.add_field(
-            name="$infiltrate",
+            name=f"{'✅' if '$infiltrate' in user_solved else '❌'} $infiltrate",
             value="Category: Encryption\nLevel: Beginner",
             inline=True
         )
         embed.add_field(
-            name="$hiddeninplainsight",
+            name=f"{'✅' if '$hiddeninplainsight' in user_solved else '❌'} $hiddeninplainsight",
             value="Category: Web Exploitation\nLevel: Beginner",
             inline=True
         )
         embed.add_field(
-            name="$behindtheframe",
+            name=f"{'✅' if '$behindtheframe' in user_solved else '❌'} $behindtheframe",
             value="Category: Web Exploitation\nLevel: Beginner",
             inline=True
         )
         embed.add_field(
-            name="$codecascade",
+            name=f"{'✅' if '$codecascade' in user_solved else '❌'} $codecascade",
             value="Category: String & Code Analysis\nLevel: Intermediate",
             inline=True
         )
         embed.add_field(
-            name="$doubletrouble",
+            name=f"{'✅' if '$doubletrouble' in user_solved else '❌'} $doubletrouble",
             value="Category: Encryption\nLevel: Intermediate",
             inline=True
         )
         embed.add_field(
-            name="$pagehunt",
+            name=f"{'✅' if '$pagehunt' in user_solved else '❌'} $pagehunt",
             value="Category: Web Exploitation\nLevel: Intermediate",
             inline=True
         )
         embed.add_field(
-            name="$hiddenlayers",
+            name=f"{'✅' if '$hiddenlayers' in user_solved else '❌'} $hiddenlayers",
             value="Category: Image Steganography\nLevel: Intermediate",
             inline=True
         )
         embed.add_field(
-            name="$metadata",
+            name=f"{'✅' if '$metadata' in user_solved else '❌'} $metadata",
             value="Category: Image Steganography\nLevel: Intermediate",
             inline=True
         )
         embed.add_field(
-            name="$birdsnest",
+            name=f"{'✅' if '$birdsnest' in user_solved else '❌'} $birdsnest",
             value="Category: Misc.\nLevel: Advanced",
             inline=True
         )
         embed.add_field(
-            name="$yranib",
+            name=f"{'✅' if '$yranib' in user_solved else '❌'} $yranib",
             value="Category: Misc.\nLevel: Advanced",
             inline=True
         )
@@ -363,22 +366,25 @@ async def on_message(message):
 
 # sort by category beginner
     if message.content.startswith('$beginner'):
+        user_id = str(message.author.id)
+        user_solved = solved_challenges.get(user_id, [])
+        
         embed = discord.Embed(
             title='BEGINNER CHALLENGES (1pt each)',
             color=discord.Colour.green()
         )
         embed.add_field(
-            name="$infiltrate",
+            name=f"{'✅' if '$infiltrate' in user_solved else '❌'} $infiltrate",
             value="Category: Encryption",
             inline=True
         )
         embed.add_field(
-            name="$behindtheframe",
+            name=f"{'✅' if '$behindtheframe' in user_solved else '❌'} $behindtheframe",
             value="Category: Web Exploitation",
             inline=True
         )
         embed.add_field(
-            name="$hiddeninplainsight",
+            name=f"{'✅' if '$hiddeninplainsight' in user_solved else '❌'} $hiddeninplainsight",
             value="Category: Web Exploitation",
             inline=True
         )
@@ -387,22 +393,30 @@ async def on_message(message):
 
 # sort by category intermediate
     if message.content.startswith('$intermediate'):
+        user_id = str(message.author.id)
+        user_solved = solved_challenges.get(user_id, [])
+        
         embed = discord.Embed(
             title="INTERMEDIATE CHALLENGES (2pts each)",
             color=discord.Colour.yellow()
         )
         embed.add_field(
-            name="$pagehunt",
+            name=f"{'✅' if '$pagehunt' in user_solved else '❌'} $pagehunt",
             value="Category: Web Exploitation",
             inline=True
         )
         embed.add_field(
-            name="$codecascade",
+            name=f"{'✅' if '$codecascade' in user_solved else '❌'} $codecascade",
             value="Category: String & Code Analysis",
             inline=True
         )
         embed.add_field(
-            name="$hiddenlayers",
+            name=f"{'✅' if '$doubletrouble' in user_solved else '❌'} $doubletrouble",
+            value="Category: Encryption",
+            inline=True
+        )
+        embed.add_field(
+            name=f"{'✅' if '$hiddenlayers' in user_solved else '❌'} $hiddenlayers",
             value="Category: Image Steganography",
             inline=True
         )
@@ -412,22 +426,25 @@ async def on_message(message):
 
 # sort by category advanced
     if message.content.startswith('$advanced'):
+        user_id = str(message.author.id)
+        user_solved = solved_challenges.get(user_id, [])
+        
         embed = discord.Embed(
             title="ADVANCED CHALLENGES (3pts each)",
             color=discord.Colour.red()
         )
         embed.add_field(
-            name="$metadata",
+            name=f"{'✅' if '$metadata' in user_solved else '❌'} $metadata",
             value="Category: Image Steganography",
             inline=True
         )
         embed.add_field(
-            name="$birdsnest",
+            name=f"{'✅' if '$birdsnest' in user_solved else '❌'} $birdsnest",
             value="Category: Misc.",
             inline=True
         )
         embed.add_field(
-            name="$yranib",
+            name=f"{'✅' if '$yranib' in user_solved else '❌'} $yranib",
             value="Category: Misc.",
             inline=True
         )
