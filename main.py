@@ -155,14 +155,14 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 # flags (later on maybe i need a way to not store this in plaintext)
-infiltrate="!login Cyb3rP@ssw0rd!"
+infiltrate="flag{Cyb3rP@ssw0rd!}"
 hiddeninplainsight="flag{view_source_master}"
 behindtheframe = "flag{you_found_the_real_file}"
 pagehunt = "flag{you_found_it_in_the_dom}"
 hiddenlayers = "flag{hidden_in_png}"
-codecascade = "983472983746598"
+codecascade = "flag{983472983746598}"
 birdsnest = "flag{you_found_me}"
-yranib = "FLAG{REVERSE_ENGINEERED}"
+yranib = "flag{REVERSE_ENGINEERED}"
 doubletrouble = "flag{double_encryption}"
 metadata = "flag{hidden_in_exif}"
 
